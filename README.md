@@ -10,7 +10,15 @@ system at once:
 - **Overload**: amber, turns on by itself while a root shell is open (`sudo -i`, `sudo su`, ...)
 - **Redline**: red, the grid alert for low battery, overheating or a broken update
 
-> **Screenshots:** _add a few here before publishing (desktop, lock screen, card switcher, computer bar)._
+![The desktop: live 3D grid wallpaper](docs/screenshots/desktop.png)
+
+| Computer bar (`SUPER+SPACE`) | Light-disc launcher (hold `SUPER+D`) |
+|---|---|
+| ![Computer bar](docs/screenshots/computer.png) | ![Light-disc launcher](docs/screenshots/disc.png) |
+| **Lock screen** | **Notifications** |
+| ![Lock screen](docs/screenshots/lock.png) | ![Notification card](docs/screenshots/notification.png) |
+
+![The bar](docs/screenshots/bar.png)
 
 ## Features
 
