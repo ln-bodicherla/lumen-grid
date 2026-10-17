@@ -1,0 +1,11 @@
+#!/bin/bash
+# Re-color the Lumen extras in the new theme's accent. Fast, visible things first.
+# Omarchy reloads terminals before it runs theme hooks, so Ghostty would keep the
+# previous theme's shaders; regenerate them and reload Ghostty again right away.
+"@REPO@/os/make-ghostty-trail.sh" >/dev/null 2>&1 || true
+"@REPO@/os/make-ghostty-glow.sh" >/dev/null 2>&1 || true
+pgrep -x ghostty >/dev/null && killall -SIGUSR2 ghostty 2>/dev/null || true
+"$HOME/.local/bin/lumen-gridvision" refresh >/dev/null 2>&1 || true
+"@REPO@/os/make-gtk.sh" >/dev/null 2>&1 || true
+"@REPO@/os/make-obsidian.py" >/dev/null 2>&1 || true
+"@REPO@/os/make-cursors.sh" >/dev/null 2>&1 || true   # cached per color; ~2 s only the first time

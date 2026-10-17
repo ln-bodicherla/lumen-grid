@@ -1,0 +1,12 @@
+[Unit]
+Description=Lumen keyboard: backlight breathes while Claude waits, flashes on notifications
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=%h/.local/bin/lumen-keys
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

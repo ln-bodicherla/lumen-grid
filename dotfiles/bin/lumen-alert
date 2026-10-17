@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""Grid alert: when the system needs you, the desktop goes Redline red.
+
+Triggers
+  battery   discharging at 15% or less (clears once charging or above 20%)
+  heat      fans above 90% of max, or any SMC temperature at 85°C or more
+  update    pacman left its database locked with no pacman running (a broken update)
+
+While an alert is on, the Lumen Redline theme is applied, the active window
+border pulses red, and one critical notification says why. When everything
+clears, the theme you had comes back. Only acts while a Lumen theme is active.
+
+    lumen-alert            run the watcher (lumen-alert user service)
+    lumen-alert test [s]   raise a test alert for s seconds (default 12)
+"""
+import glob
+import math
+import os
+import subprocess
+import sys
+import time
+
+STATE = os.path.expanduser("~/.local/state/lumen-alert")
+TEST_FILE = os.path.join(STATE, "test-until")
+THEME_FILE = os.path.expanduser("~/.local/state/omarchy/current/theme.name")
+ALERT_THEME = "lumen-redline"
+LUMEN_THEMES = ("lumen-program", "lumen-overload", ALERT_THEME)
+def find_battery():
+    for p in sorted(glob.glob("/sys/class/power_supply/*")):
+        if read(os.path.join(p, "type")) == "Battery":
+            return p
+    return None
+
+
+BATTERY = None
+CHECK_SECONDS = 5
+
+
+def read(path, default=""):
+    try:
+        with open(path) as f:
+            return f.read().strip()
+    except OSError:
+        return default
+
+
+def smc_hwmon():
+    """every hwmon device (fans and temperatures from whatever sensors this machine has)"""
+    return sorted(glob.glob("/sys/class/hwmon/hwmon*"))
+
+
+battery_low = False
+
+
+def check_battery():
+    global battery_low
+    if not BATTERY:
+        return None
+    cap = int(read(f"{BATTERY}/capacity", "100") or 100)
+    discharging = read(f"{BATTERY}/status") == "Discharging"
+    if battery_low:
+        battery_low = discharging and cap <= 20
+    else:
+        battery_low = discharging and cap <= 15
+    return f"Battery at {cap}%: plug in" if battery_low else None
+
+
+def check_heat(hws):
+    fans = [f for hw in hws for f in glob.glob(f"{hw}/fan*_input")]
+    temps = [t for hw in hws for t in glob.glob(f"{hw}/temp*_input")]
+    for fan in fans:
+        speed, top = int(read(fan, "0") or 0), int(read(fan.replace("_input", "_max"), "0") or 0)
+        if top and speed >= top * 0.9:
+            return f"Running hot: fans at {speed} RPM"
+    for temp in temps:
+        c = int(read(temp, "0") or 0) / 1000
+        if c >= 85:
+            label = read(temp.replace("_input", "_label"), "sensor")
+            return f"Running hot: {label} at {c:.0f}°C"
+    return None
+
+
+def check_update():
+    if not os.path.exists("/var/lib/pacman/db.lck"):
+        return None
+    if subprocess.run(["pgrep", "-x", "pacman|yay|paru|makepkg"], stdout=subprocess.DEVNULL).returncode == 0:
+        return None
+    return "Update broke off: pacman's database is still locked"
+
+
+def check_test():
+    until = float(read(TEST_FILE, "0") or 0)
+    return "Test alert" if time.time() < until else None
+
+
+def set_border(rgba_hex):
+    lua = 'hl.config({ general = { col = { active_border = { colors = { "rgba(%s)", "rgba(5a0a0aee)" }, angle = 45 } } } })' % rgba_hex
+    subprocess.run(["hyprctl", "eval", lua], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def set_theme(name):
+    subprocess.Popen(["omarchy", "theme", "set", name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def notify(reason):
+    subprocess.Popen(["notify-send", "-a", "Lumen", "-u", "critical", "◆ GRID ALERT", reason])
+
+
+def watch():
+    global BATTERY
+    BATTERY = find_battery()
+    os.makedirs(STATE, exist_ok=True)
+    hw = smc_hwmon()
+    saved = os.path.join(STATE, "restore-theme")
+    reason, next_check, t0 = None, 0.0, time.monotonic()
+
+    while True:
+        now = time.monotonic()
+        if now >= next_check:
+            next_check = now + CHECK_SECONDS
+            new = check_test() or check_battery() or check_heat(hw) or check_update()
+            theme = read(THEME_FILE)
+            if new and not reason and theme in LUMEN_THEMES:
+                if theme != ALERT_THEME:
+                    with open(saved, "w") as f:
+                        f.write(theme)
+                set_theme(ALERT_THEME)
+                notify(new)
+                t0 = now
+            elif not new and reason:
+                set_theme(read(saved, "lumen-program") or "lumen-program")
+            if new and reason and new != reason:
+                notify(new)
+            reason = new if (new and (reason or theme in LUMEN_THEMES)) else None
+
+        if reason:
+            # pulse the active border between ember and full red, ~1.2 s per beat
+            k = 0.5 + 0.5 * math.sin((now - t0) * 2 * math.pi / 1.2)
+            r, g, b = 90 + round(165 * k), 10 + round(32 * k), 10 + round(20 * k)
+            set_border("%02x%02x%02xff" % (r, g, b))
+            time.sleep(0.08)
+        else:
+            time.sleep(0.5)
+
+
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "test":
+        seconds = float(sys.argv[2]) if len(sys.argv) > 2 else 12
+        os.makedirs(STATE, exist_ok=True)
+        with open(TEST_FILE, "w") as f:
+            f.write(str(time.time() + seconds))
+        print(f"Test alert for {seconds:.0f}s")
+        return
+    watch()
+
+
+if __name__ == "__main__":
+    main()

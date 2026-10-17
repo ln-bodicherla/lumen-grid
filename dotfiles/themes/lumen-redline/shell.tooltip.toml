@@ -1,0 +1,7 @@
+# Lumen: tooltips read like HUD labels.
+[tooltip]
+background       = "#0d0d0d"
+background-alpha = 0.97
+text             = "#F2372A"
+border           = "#F2372A"
+border-alpha     = 0.7

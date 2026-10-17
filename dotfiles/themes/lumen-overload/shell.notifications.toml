@@ -1,0 +1,9 @@
+# Lumen: notifications framed in amber; the countdown bar is a cyan light trail.
+[notifications]
+background       = "#0d0d0d"
+background-alpha = 0.96
+text             = "#fbecc4"
+border           = "#F2C13C"
+border-alpha     = 0.9
+border-width     = 1
+countdown        = "#8ED7E6"

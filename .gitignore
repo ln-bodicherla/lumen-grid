@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.qsb
+omarchy/background.png
+omarchy/theme.json
+.DS_Store

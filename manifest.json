@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "Lumen Grid",
+  "version": "1.8.0",
+  "description": "Pops playing videos out into a neon focus stage, dims the page, keeps the feed scrollable. Optional Lumen theme for every site.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Lumen Grid"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "bypass.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "css": [
+        "youtube.css"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "commands": {
+    "toggle-focus": {
+      "suggested_key": {
+        "default": "Alt+Shift+F"
+      },
+      "description": "Focus / unfocus the playing video"
+    },
+    "toggle-lumen": {
+      "suggested_key": {
+        "default": "Alt+Shift+T"
+      },
+      "description": "Toggle Lumen theme on all sites"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "omarchy/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

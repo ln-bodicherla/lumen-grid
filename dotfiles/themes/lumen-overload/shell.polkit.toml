@@ -1,0 +1,12 @@
+# Lumen: password prompts match the lock screen.
+[polkit]
+background       = "#0d0d0d"
+background-alpha = 0.97
+text             = "#fbecc4"
+text-error       = "#e06c75"
+border           = "#F2C13C"
+border-error     = "#e06c75"
+border-alpha     = 1.0
+scrim            = "#000000"
+scrim-alpha      = 0.55
+accent           = "#8ED7E6"

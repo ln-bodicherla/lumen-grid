@@ -1,0 +1,205 @@
+/* Theme colors: content.js injects the Omarchy palette (omarchy/theme.json); these are the fallbacks. */
+:root {
+  --tf-c: var(--tf-accent, #00f0ff); --tf-c-inv: var(--tf-accent-inv, #ff0f00);
+  --tf-o: var(--tf-orange, #ff9a3c);
+  --tf-fg: var(--tf-foreground, #dffcff); --tf-fg-muted: var(--tf-foreground-muted, #8aaab3);
+  --tf-bg: var(--tf-background, #05080c); --tf-bg-dark: var(--tf-background-dark, #030507); --tf-panel: var(--tf-panel-bg, #0a1118);
+}
+
+/* ---------- Focus stage (light DOM, scoped to #tf-root) ---------- */
+#tf-root { all: initial; }
+#tf-root .tf-backdrop {
+  position: fixed; inset: 0; z-index: 2147483645; pointer-events: none;
+  opacity: 0; transition: opacity .35s ease;
+  /* a light veil only: the rest of the page stays readable, just a touch darker */
+  background:
+    linear-gradient(color-mix(in srgb, var(--tf-c) 3%, transparent) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, color-mix(in srgb, var(--tf-c) 3%, transparent) 1px, transparent 1px) 0 0 / 48px 48px,
+    rgba(0,0,0,var(--tf-dim,.1));
+}
+#tf-root.tf-on .tf-backdrop { opacity: 1; }
+#tf-root.tf-on.tf-dock .tf-backdrop { opacity: .7; }
+
+#tf-root .tf-frame {
+  position: fixed; z-index: 2147483646; box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--tf-c) 85%, transparent); border-radius: 6px; background: #000;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tf-c) 15%, transparent), 0 0 24px color-mix(in srgb, var(--tf-c) 55%, transparent),
+              0 0 120px color-mix(in srgb, var(--tf-c) 22%, transparent), inset 0 0 30px color-mix(in srgb, var(--tf-c) 12%, transparent);
+  overflow: hidden; display: none;
+}
+#tf-root.tf-on .tf-frame { display: block; }
+#tf-root .tf-frame.tf-anim {
+  transition: left .45s cubic-bezier(.2,.9,.2,1), top .45s cubic-bezier(.2,.9,.2,1),
+              width .45s cubic-bezier(.2,.9,.2,1), height .45s cubic-bezier(.2,.9,.2,1);
+}
+/* fullscreen popout: follow the physical screen's corners (rounded top / square bottom on MacBooks) */
+#tf-root .tf-frame:fullscreen {
+  --tf-hud-rt: max(0px, calc(var(--tf-scr-t, 0px) - 8px)); --tf-hud-rb: max(0px, calc(var(--tf-scr-b, 0px) - 8px));
+  border-radius: var(--tf-scr-t, 0px) var(--tf-scr-t, 0px) var(--tf-scr-b, 0px) var(--tf-scr-b, 0px); border: 0; width: 100vw !important; height: 100vh !important; left: 0 !important; top: 0 !important; }
+#tf-root .tf-stage { position: absolute; inset: 0; }
+#tf-root .tf-stage > video.tf-video {
+  position: absolute !important; inset: 0 !important; left: 0 !important; top: 0 !important;
+  width: 100% !important; height: 100% !important; max-width: none !important; max-height: none !important;
+  min-width: 0 !important; min-height: 0 !important; margin: 0 !important; transform: none !important;
+  object-fit: contain !important; background: #000 !important; display: block !important;
+  visibility: visible !important; opacity: 1 !important; z-index: 0 !important; filter: none !important;
+}
+#tf-root .tf-hud { position: absolute; inset: 0; z-index: 1; }
+
+.tf-placeholder {
+  display: flex !important; align-items: center; justify-content: center; box-sizing: border-box;
+  background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--tf-c) 6%, transparent) 0 1px, transparent 1px 4px), #020a10 !important;
+  border: 1px dashed color-mix(in srgb, var(--tf-c) 60%, transparent); color: var(--tf-c) !important; cursor: pointer;
+  font: 600 12px/1.2 ui-monospace, "JetBrains Mono", monospace !important; letter-spacing: .25em;
+  text-shadow: 0 0 8px var(--tf-c); position: relative; z-index: 1;
+}
+
+/* ---------- Lumen theme for every site (dark by default) ----------
+   tf-lumen   : neon accents + grid, on every site
+   tf-invert : added only when the site is light; flips it dark with a pure invert,
+               which media re-inverts exactly so photos/video keep their true colors.
+   Accents use --tf-neon, written as the complement under tf-invert so they still land on cyan. */
+html.tf-lumen { --tf-neon: var(--tf-c); }
+/* only for sites that are dark on their own: under the invert it would turn default text white -> black on black */
+html.tf-lumen:not(.tf-invert) { color-scheme: dark; }
+html.tf-lumen.tf-invert { --tf-neon: var(--tf-c-inv); background: #fff !important; filter: invert(1); }
+html.tf-lumen:not(.tf-invert) { background-color: #05080c; }
+/* inverted pages flip blue links to olive; put text links back on neon */
+html.tf-invert :is(p, li, td, dd, blockquote, figcaption) a:not(:has(img)) { color: var(--tf-neon) !important; }
+html.tf-invert img, html.tf-invert picture, html.tf-invert video:not(.tf-video), html.tf-invert canvas,
+html.tf-invert iframe, html.tf-invert embed, html.tf-invert object, html.tf-invert svg image,
+html.tf-invert [style*="background-image"], html.tf-invert #tf-root > *, html.tf-invert .tf-deco, html.tf-invert #tf-bg {
+  filter: invert(1) !important;
+}
+/* accents stay quiet at rest and light up on interaction, so dense sites don't turn into a neon mess */
+html.tf-lumen a:hover { color: var(--tf-neon) !important; text-shadow: 0 0 8px color-mix(in srgb, var(--tf-neon) 50%, transparent); }
+html.tf-lumen button:hover, html.tf-lumen [role="button"]:hover {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tf-neon) 70%, transparent), 0 0 14px color-mix(in srgb, var(--tf-neon) 40%, transparent) !important;
+}
+html.tf-lumen input:focus, html.tf-lumen textarea:focus, html.tf-lumen select:focus {
+  border-color: var(--tf-neon) !important; box-shadow: 0 0 12px color-mix(in srgb, var(--tf-neon) 45%, transparent) !important;
+}
+html.tf-lumen ::selection { background: var(--tf-neon); color: #000; }
+html.tf-invert ::selection { color: #fff; }
+html.tf-lumen *:focus-visible { outline: 1px solid var(--tf-neon) !important; outline-offset: 2px; }
+/* scrollbars are painted outside the page filter, so these use the real colors */
+html.tf-lumen ::-webkit-scrollbar { width: 10px; height: 10px; background: #02080d; }
+html.tf-lumen ::-webkit-scrollbar-thumb { background: #0b3b44; border: 2px solid #02080d; }
+html.tf-lumen ::-webkit-scrollbar-thumb:hover { background: var(--tf-c); }
+
+/* ---------- Live backdrop on every site: Omarchy wallpaper + Lumen grid floor (#tf-bg, injected by content.js) ---------- */
+#tf-bg { display: none; }
+html.tf-wall #tf-bg {
+  display: block; position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden;
+  background: var(--tf-bg-dark);
+}
+#tf-bg .tf-wallpaper {
+  position: absolute; inset: 0; opacity: .42;
+  background: var(--tf-wallpaper, none) center / cover no-repeat;
+}
+#tf-bg .tf-shade {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 35%, transparent 0%, rgba(0,0,0,.5) 80%),
+    linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.15) 45%, rgba(0,0,0,.55) 100%);
+}
+#tf-bg .tf-floor-wrap {
+  position: absolute; left: -60%; right: -60%; bottom: 0; height: 42vh;
+  perspective: 380px; perspective-origin: 50% 0%;
+  -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 95%); mask-image: linear-gradient(to top, #000 10%, transparent 95%);
+}
+#tf-bg .tf-floor {
+  position: absolute; left: 0; right: 0; top: -200%; bottom: 0; transform-origin: 50% 100%;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--tf-c) 26%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--tf-c) 26%, transparent) 1px, transparent 1px);
+  background-size: 70px 70px;
+  animation: tf-floor 5s linear infinite;  /* moves exactly one cell per loop: seamless */
+  will-change: transform;
+}
+@keyframes tf-floor { from { transform: rotateX(72deg) translateY(0); } to { transform: rotateX(72deg) translateY(70px); } }
+#tf-bg .tf-horizon {
+  position: absolute; left: 0; right: 0; bottom: 42vh; height: 1px; opacity: .55;
+  background: linear-gradient(90deg, transparent, var(--tf-o) 30%, var(--tf-c) 70%, transparent);
+  box-shadow: 0 0 18px var(--tf-o), 0 0 40px color-mix(in srgb, var(--tf-c) 40%, transparent);
+}
+@media (prefers-reduced-motion: reduce) { #tf-bg .tf-floor { animation: none; transform: rotateX(72deg); } }
+
+/* page surfaces painted in the page color: see-through (classes set by content.js) */
+html.tf-wall.tf-clear, html.tf-wall .tf-clear { background-color: transparent !important; }
+/* no backdrop-filter here: it would re-anchor any position:fixed menus inside the bar */
+html.tf-wall .tf-glass { background-color: color-mix(in srgb, var(--tf-bg-dark) 86%, transparent) !important; }
+/* inverted sites: colors are written pre-inversion, so the glass is light here and lands dark */
+/* backdrop-filter under the inverted root samples the un-inverted backdrop and paints white,
+   so on inverted sites every blur (ours and the site's own frosted headers) becomes a plain tint */
+html.tf-wall.tf-invert .tf-glass { background-color: rgba(242,242,242,.88) !important; }
+html.tf-invert body * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+/* dark sections of light pages are flipped back to their own colors (media inside then needs no re-invert) */
+html.tf-invert .tf-keep { filter: invert(1) !important; --tf-neon: var(--tf-c); }  /* flipped twice: real accent again */
+html.tf-invert .tf-keep :is(img, picture, video, canvas, iframe, embed, object, svg image, [style*="background-image"]) { filter: none !important; }
+html.tf-lumen.tf-invert.tf-wall { background: transparent !important; }
+
+/* ---------- In-place spotlight ---------- */
+#tf-root.tf-spot .tf-backdrop { opacity: 0; transition: opacity .35s ease; }
+#tf-root .tf-hole {
+  position: fixed; z-index: 2147483645; pointer-events: none; display: none; opacity: 0; transition: opacity .35s ease;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tf-c) 50%, transparent), 0 0 28px color-mix(in srgb, var(--tf-c) 45%, transparent), 0 0 110px color-mix(in srgb, var(--tf-c) 18%, transparent);
+}
+#tf-root.tf-spot .tf-hole { display: block; }
+
+.tf-host { isolation: isolate !important; }  /* keep our z-index inside the player so sticky headers cover it */
+.tf-deco {
+  position: absolute !important; inset: 0 !important; z-index: 2147483000 !important; pointer-events: none !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tf-c) 90%, transparent), inset 0 0 26px color-mix(in srgb, var(--tf-c) 28%, transparent) !important;
+  font: 700 11px/1 ui-monospace, "JetBrains Mono", monospace !important; letter-spacing: .3em !important;
+  color: var(--tf-c) !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important;
+  animation: tf-in .5s ease-out;
+}
+.tf-deco.tf-track { position: fixed !important; inset: auto !important; z-index: 2147483646 !important; }
+@keyframes tf-in { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
+.tf-deco .tf-c { position: absolute; width: 22px; height: 22px; border: 2px solid var(--tf-c); filter: drop-shadow(0 0 6px var(--tf-c)); }
+.tf-deco .tf-c1 { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+.tf-deco .tf-c2 { top: 8px; right: 8px; border-left: 0; border-bottom: 0; }
+.tf-deco .tf-c3 { bottom: 8px; left: 8px; border-right: 0; border-top: 0; }
+.tf-deco .tf-c4 { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+/* brackets sit 8px in, so curve them concentric with the player's own corners */
+.tf-deco .tf-c1 { border-top-left-radius: max(0px, calc(var(--tf-rt, 0px) - 8px)); }
+.tf-deco .tf-c2 { border-top-right-radius: max(0px, calc(var(--tf-rt, 0px) - 8px)); }
+.tf-deco .tf-c3 { border-bottom-left-radius: max(0px, calc(var(--tf-rb, 0px) - 8px)); }
+.tf-deco .tf-c4 { border-bottom-right-radius: max(0px, calc(var(--tf-rb, 0px) - 8px)); }
+.tf-deco .tf-scan {
+  position: absolute; left: 0; right: 0; top: 0; height: 2px; opacity: .45;
+  background: linear-gradient(90deg, transparent, var(--tf-c), transparent); box-shadow: 0 0 12px var(--tf-c);
+  animation: tf-scan 1.4s ease-in 1 forwards;  /* one sweep on focus, then gone */
+}
+@keyframes tf-scan { from { top: 0; opacity: .7 } to { top: 100%; opacity: 0 } }
+.tf-deco .tf-tag {
+  position: absolute; top: 14px; left: 38px; display: flex; gap: 10px; align-items: center;
+  text-shadow: 0 0 8px var(--tf-c); opacity: 0; transition: opacity .25s;
+}
+.tf-host:hover > .tf-deco .tf-tag, .tf-deco.tf-track:hover .tf-tag { opacity: 1; }
+.tf-deco .tf-pop {
+  pointer-events: none; cursor: pointer; padding: 6px 9px; color: var(--tf-fg); text-shadow: none; letter-spacing: .15em;
+  border: 1px solid color-mix(in srgb, var(--tf-c) 60%, transparent); background: rgba(0,10,16,.75);
+  clip-path: polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+}
+.tf-host:hover > .tf-deco .tf-pop { pointer-events: auto; }
+.tf-deco .tf-pop:hover { background: var(--tf-c); color: #001014; box-shadow: 0 0 14px var(--tf-c); }
+
+/* ---------- Border beam ----------
+   A light cycle rides the edge: a conic gradient spun by an animated angle and
+   masked to a thin ring. Inspired by Border Beam from libraries.dev (MIT). */
+@property --tf-beam { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes tf-beam-spin { to { --tf-beam: 360deg; } }
+#tf-root .tf-frame::after, .tf-deco::after {
+  content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--tf-beam), transparent 0 72%,
+              color-mix(in srgb, var(--tf-c) 40%, transparent) 86%, var(--tf-c) 95%, #fff 98%, transparent 98.5%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: tf-beam-spin 3.2s linear infinite;
+}
+.tf-deco::after { border-radius: var(--tf-rt, 0px) var(--tf-rt, 0px) var(--tf-rb, 0px) var(--tf-rb, 0px); }
+#tf-root .tf-frame:fullscreen::after { display: none; }
+@media (prefers-reduced-motion: reduce) { #tf-root .tf-frame::after, .tf-deco::after { animation: none; display: none; } }

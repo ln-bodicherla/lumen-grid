@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "lumengrid.lumen-fx",
+  "name": "Lumen window effects",
+  "version": "1.0.0",
+  "author": "Lumen Grid",
+  "description": "Light-cycle focus trail, derez on close, rez on open",
+  "kinds": ["service"],
+  "keepLoaded": true,
+  "entryPoints": { "service": "Service.qml" }
+}

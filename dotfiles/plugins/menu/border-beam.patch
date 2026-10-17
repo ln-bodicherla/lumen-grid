@@ -1,0 +1,20 @@
+diff -ruN a/Menu.qml b/Menu.qml
+--- a/Menu.qml	2026-10-15 22:00:16.223285997 -0700
++++ b/Menu.qml	2026-10-15 22:00:16.223804833 -0700
+@@ -1113,6 +1113,16 @@
+ 
+       MouseArea { anchors.fill: parent; onClicked: {} }
+ 
++      // Lumen border beam: a light cycle rides the launcher's edge while it's open.
++      BorderBeam {
++        anchors.fill: parent
++        radius: root.cornerRadius
++        color: root.border
++        running: panel.visible
++        length: 180
++        duration: 3200
++      }
++
+       Item {
+         id: keyCatcher
+         anchors.fill: parent

@@ -1,0 +1,28 @@
+# Lumen: controls are thin light lines; they brighten on hover/focus and stay lit when selected.
+[controls]
+normal-color        = "#d6f4fa"
+normal-fill-alpha   = 0.03
+normal-border       = "#8ED7E6"
+normal-border-width = 1
+normal-border-alpha = 0.3
+
+hover-cursor-color        = "#8ED7E6"
+hover-cursor-fill-alpha   = 0.10
+hover-cursor-border       = "#8ED7E6"
+hover-cursor-border-width = 1
+hover-cursor-border-alpha = 0.85
+
+focus-color        = "#8ED7E6"
+focus-fill-alpha   = 0.10
+focus-border       = "#8ED7E6"
+focus-border-width = 1
+focus-border-alpha = 0.85
+
+selected-color        = "#8ED7E6"
+selected-fill-alpha   = 0.14
+selected-border       = "#8ED7E6"
+selected-border-width = 1
+selected-border-alpha = 0.9
+
+pressed-fill-alpha   = 0.22
+selection-fill-alpha = 0.35

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "lumengrid.workspaces",
+  "name": "My Workspaces",
+  "version": "1.0.0",
+  "author": "Omarchy",
+  "description": "Lumen light-disc workspace indicators",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Workspaces.qml"
+  },
+  "barWidget": {
+    "displayName": "My Workspaces",
+    "description": "Lumen light-disc workspace indicators",
+    "category": "Compositor",
+    "allowMultiple": false
+  },
+  "omarchy": {
+    "clonedFrom": "omarchy.workspaces"
+  }
+}

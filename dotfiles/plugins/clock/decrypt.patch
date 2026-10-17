@@ -1,0 +1,36 @@
+diff -ruN a/BarWidget.qml b/BarWidget.qml
+--- a/BarWidget.qml	2026-10-16 15:35:11.132409764 -0700
++++ b/BarWidget.qml	2026-10-16 15:35:11.133272242 -0700
+@@ -35,6 +35,23 @@
+   readonly property string displayText: formatted(displayDate)
+   readonly property var verticalLines: displayText.split("\n")
+ 
++  // Lumen: the label decrypts into place whenever it changes (every minute)
++  property real decryptProgress: 1
++  property int decryptTick: 0
++  readonly property string decryptGlyphs: "01<>/\\|=+*#%&$@ABCDEFXYZ"
++  readonly property string shownText: {
++    decryptTick
++    var n = displayText.length, locked = Math.floor(decryptProgress * n), out = ""
++    for (var i = 0; i < n; i++) {
++      var ch = displayText.charAt(i)
++      out += (i < locked || ch === " " || ch === ":") ? ch : decryptGlyphs.charAt(Math.floor(Math.random() * decryptGlyphs.length))
++    }
++    return out
++  }
++  onDisplayTextChanged: decryptAnim.restart()
++  NumberAnimation { id: decryptAnim; target: root; property: "decryptProgress"; from: 0; to: 1; duration: 650 }
++  Timer { interval: 45; repeat: true; running: decryptAnim.running; onTriggered: root.decryptTick++ }
++
+   function refresh() {
+     displayDate = new Date()
+     if (panelLoader.item && panelLoader.item.refresh) panelLoader.item.refresh()
+@@ -147,7 +164,7 @@
+     id: button
+     anchors.fill: parent
+     bar: root.bar
+-    text: root.vertical ? "" : root.displayText
++    text: root.vertical ? "" : root.shownText
+     labelVisible: !root.vertical
+     hasVisualContent: root.vertical ? root.verticalLines.length > 0 : text !== ""
+     fixedHeight: root.vertical ? root.verticalLines.length * Style.bar.iconSlot : -1

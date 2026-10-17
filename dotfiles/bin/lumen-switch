@@ -1,0 +1,15 @@
+#!/bin/bash
+# Flip the whole system between Program (Lumen Program, blue) and Overload (Lumen Overload, orange).
+# Bound to SUPER+ALT+T in ~/.config/hypr/bindings.lua. Everything themed by Omarchy follows,
+# and the theme-set hook re-syncs the Lumen Grid browser extension.
+set -euo pipefail
+
+current=$(omarchy theme current 2>/dev/null | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+if [[ $current == "lumen-program" ]]; then
+  next=lumen-overload; label="OVERLOAD"
+else
+  next=lumen-program; label="PROGRAM"
+fi
+
+omarchy theme set "$next"
+notify-send -a "Lumen" -t 2500 "◆ $label" "Grid identity: $next"

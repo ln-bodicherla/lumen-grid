@@ -1,0 +1,38 @@
+#!/bin/bash
+# Track what Claude Code sessions are doing, for the Lumen orb in the bar.
+#   lumen-agent-state busy|wait|idle   called from Claude Code hooks (hook JSON on stdin)
+#   lumen-agent-state status           prints busy, wait or idle (wait wins over busy)
+# One file per session in $DIR holds "<state> <claude pid>"; sessions whose claude
+# process is gone are dropped, so a crash never leaves the orb spinning.
+DIR="${XDG_STATE_HOME:-$HOME/.local/state}/lumen-agents"
+mkdir -p "$DIR"
+
+claude_pid() {  # nearest ancestor process named claude
+  local pid=$PPID
+  while [[ $pid -gt 1 ]]; do
+    [[ $(cat /proc/$pid/comm 2>/dev/null) == claude ]] && { echo "$pid"; return; }
+    pid=$(awk '{print $4}' /proc/$pid/stat 2>/dev/null) || break
+  done
+  echo "$PPID"
+}
+
+case "${1:-status}" in
+  busy|wait|idle)
+    sid=$(python3 -c 'import json,sys; print(json.load(sys.stdin).get("session_id",""))' 2>/dev/null)
+    sid=${sid//[^A-Za-z0-9_-]/}
+    [[ -n $sid ]] || exit 0
+    if [[ $1 == idle ]]; then rm -f "$DIR/$sid"; else echo "$1 $(claude_pid)" > "$DIR/$sid"; fi
+    ;;
+  status)
+    out=idle
+    for f in "$DIR"/*; do
+      [[ -f $f ]] || continue
+      read -r state pid < "$f"
+      if [[ -z $pid || ! -d /proc/$pid ]]; then rm -f "$f"; continue; fi
+      [[ $state == wait ]] && out=wait
+      [[ $state == busy && $out == idle ]] && out=busy
+    done
+    echo "$out"
+    ;;
+esac
+exit 0

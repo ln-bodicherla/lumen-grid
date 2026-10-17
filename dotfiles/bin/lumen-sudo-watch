@@ -1,0 +1,66 @@
+#!/bin/bash
+# Switch to the orange "Lumen Overload" theme while a root shell is open (sudo -i,
+# sudo -s, sudo su, su -, run0, ...), and back to the blue "Lumen Program" theme
+# once it exits. A sudo password prompt or a one-off `sudo <command>` doesn't
+# count: only an authenticated, interactive root shell on a terminal does.
+# Only acts while one of the two Lumen themes is active, so picking any other
+# theme manually turns the behaviour off.
+
+NORMAL_THEME="lumen-program"
+ELEVATED_THEME="lumen-overload"
+POLL_SECONDS=0.25
+CALM_DOWN_USEC=500000   # stay orange this long (0.5s) after the root shell exits
+
+THEME_NAME_FILE="$HOME/.local/state/omarchy/current/theme.name"
+last_seen_elevated=0
+requested=""
+
+# A root shell: a shell process running as root on a terminal whose parent is
+# an elevation tool (or systemd, for run0). Reads `ps -eo pid,ppid,euid,tty,comm`.
+root_shell_active() {
+  # Cheap gate: no elevation tool running means no root shell to look for.
+  pgrep -x 'sudo|sudo-rs|su|doas|run0|systemd-run' >/dev/null || return 1
+  ps -eo pid=,ppid=,euid=,tty=,comm= | awk '
+    { comm[$1] = $5; ppid[$1] = $2; euid[$1] = $3; tty[$1] = $4 }
+    END {
+      for (p in comm)
+        if (euid[p] == 0 && tty[p] ~ /^pts\// &&
+            comm[p] ~ /^-?(bash|zsh|fish|sh|dash|ksh|mksh|tcsh|csh|nu|elvish)$/ &&
+            comm[ppid[p]] ~ /^(sudo|sudo-rs|su|doas|run0|systemd|systemd-executor)$/)
+          exit 0
+      exit 1
+    }'
+}
+
+apply_theme() {
+  requested="$1"
+  # Run in the background: omarchy theme set serializes itself with a lock,
+  # and its slow app-retint hooks shouldn't delay the next check.
+  omarchy theme set "$1" >/dev/null 2>&1 &
+}
+
+# File descriptor that never has data, so `read -t` works as a builtin sleep.
+exec {sleep_fd}<> <(:)
+
+while true; do
+  current=$(<"$THEME_NAME_FILE") 2>/dev/null
+
+  if [[ $current == "$NORMAL_THEME" || $current == "$ELEVATED_THEME" ]]; then
+    now=${EPOCHREALTIME/./}
+    if root_shell_active; then
+      last_seen_elevated=$now
+      want=$ELEVATED_THEME
+    elif (( now - last_seen_elevated >= CALM_DOWN_USEC )); then
+      want=$NORMAL_THEME
+    else
+      want=${requested:-$current}
+    fi
+
+    # Request each change once, not again while the previous switch is still landing
+    [[ $want != "${requested:-$current}" ]] && apply_theme "$want"
+  else
+    requested=""
+  fi
+
+  read -r -t "$POLL_SECONDS" -u "$sleep_fd"
+done

@@ -1,0 +1,259 @@
+#!/usr/bin/env python3
+"""The ship's computer: turn a plain request into Omarchy commands, using Claude.
+
+    lumen-computer "dim the screen and open my notes"
+    lumen-computer --history '[{"q": "...", "a": "..."}]' "and the swap?"     (follow-ups)
+
+Prints one JSON object:
+    {"say": "...", "commands": [{"cmd": "...", "safe": true}], "autorun": true}
+
+Claude (via the Claude Code CLI, tools disabled) only proposes commands; nothing is
+run here. The command bar runs commands marked safe right away and asks before
+anything else. "Safe" means: a program from the allowlist below, with no shell
+chaining, redirection or substitution.
+"""
+import datetime
+import glob
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+import time
+
+CACHE = os.path.expanduser("~/.cache/lumen-computer")
+CONTEXT = os.path.join(CACHE, "context.txt")
+SAFE_PROGRAMS = {
+    "omarchy", "omarchy-shell", "gtk-launch", "xdg-open", "wpctl", "brightnessctl", "playerctl",
+    "notify-send", "uwsm-app", "lumen-switch", "lumen-alert", "hyprctl",
+}
+SAFE_PREFIXES = ("omarchy-",)
+UNSAFE_CHARS = re.compile(r"[;&|<>`]|\$\(")
+
+
+def build_context():
+    """Reference of what this machine can do; rebuilt once a day."""
+    os.makedirs(CACHE, exist_ok=True)
+    if os.path.exists(CONTEXT) and time.time() - os.path.getmtime(CONTEXT) < 86400:
+        return open(CONTEXT).read()
+    lines = ["# Omarchy commands (run as shown)"]
+    try:
+        out = subprocess.run(["omarchy", "commands"], capture_output=True, text=True, timeout=20).stdout
+        for line in out.splitlines():
+            line = re.sub(r"\s{2,}", " — ", line.strip())
+            if line.startswith("omarchy "):
+                lines.append(line[:160])
+    except Exception:
+        pass
+    lines.append("\n# Installed apps (open with: gtk-launch <id>)")
+    seen = set()
+    for d in ("/usr/share/applications", os.path.expanduser("~/.local/share/applications")):
+        if not os.path.isdir(d):
+            continue
+        for f in sorted(os.listdir(d)):
+            if not f.endswith(".desktop") or f in seen:
+                continue
+            seen.add(f)
+            try:
+                text = open(os.path.join(d, f), errors="ignore").read()
+            except OSError:
+                continue
+            if re.search(r"^NoDisplay=true", text, re.M):
+                continue
+            m = re.search(r"^Name=(.+)$", text, re.M)
+            lines.append(f"{f[:-8]} — {m.group(1) if m else f[:-8]}")
+    lines.append("""
+# Lumen extras
+lumen-switch — flip between Program (blue) and Overload (orange) themes
+lumen-alert test 12 — show the red grid alert for 12 seconds
+omarchy-shell lumenFx wake — play the "systems online" boot-up HUD
+omarchy-shell lumenFx surge — play a power surge around the screen edge
+omarchy-shell lumenDisc toggle — open the app disc
+
+# Hyprland (Lua dispatchers)
+hyprctl dispatch 'hl.dsp.focus({ workspace = "3" })' — go to workspace 3
+hyprctl dispatch 'hl.dsp.window.fullscreen()' — fullscreen the focused window
+hyprctl dispatch 'hl.dsp.window.close()' — close the focused window
+
+# Audio, brightness, media
+wpctl set-volume @DEFAULT_AUDIO_SINK@ 10%+   (or 10%-, or 0.5 for 50%)
+wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+brightnessctl set 10%+   (or 10%-, or 40%)
+brightnessctl -d "*kbd_backlight*" set 50%   (keyboard light, if the machine has one)
+playerctl play-pause | next | previous
+xdg-open <url or path>
+""")
+    text = "\n".join(lines)
+    open(CONTEXT, "w").write(text)
+    return text
+
+
+def status():
+    def read(p, d=""):
+        try:
+            return open(p).read().strip()
+        except OSError:
+            return d
+    b = next((p for p in sorted(glob.glob("/sys/class/power_supply/*")) if read(p + "/type") == "Battery"), "")
+    mem = {}
+    for line in read("/proc/meminfo").splitlines():
+        k, _, v = line.partition(":")
+        mem[k] = int(v.split()[0]) if v.split() else 0
+    total, avail = mem.get("MemTotal", 0) / 1048576, mem.get("MemAvailable", 0) / 1048576
+    swap_used = (mem.get("SwapTotal", 0) - mem.get("SwapFree", 0)) / 1048576
+    load = read("/proc/loadavg").split()[:3]
+    up = float(read("/proc/uptime", "0").split()[0]) / 3600
+    disk = os.statvfs(os.path.expanduser("~"))
+    disk_free, disk_total = disk.f_bavail * disk.f_frsize / 1e9, disk.f_blocks * disk.f_frsize / 1e9
+    return (f"Now: {datetime.datetime.now():%A %d %B %Y, %H:%M}. "
+            f"RAM: {total - avail:.1f} of {total:.1f} GiB used ({(total - avail) / total * 100 if total else 0:.0f}%), swap used {swap_used:.1f} GiB. "
+            f"CPU load (1/5/15 min): {' '.join(load)} on {os.cpu_count()} cores. "
+            f"Disk (home): {disk_free:.0f} GB free of {disk_total:.0f} GB. Uptime: {up:.1f} h. "
+            f"Battery {read(b + '/capacity', '?')}% ({read(b + '/status', '?')}). "
+            f"Theme: {read(os.path.expanduser('~/.local/state/omarchy/current/theme.name'), '?')}. "
+            f"User: {os.environ.get('USER', '')}. Home: {os.path.expanduser('~')}.")
+
+
+SYSTEM = """You are the ship's computer of this Linux desktop (Omarchy: Arch Linux + Hyprland, Lumen themed).
+The user speaks or types a request. Reply with ONLY a JSON object, no prose, no code fences:
+{"say": "<terse computer-voice reply, at most 14 words>", "commands": ["<shell command>", ...]}
+Rules:
+- Prefer commands from the reference below, exactly as written there. One action per command.
+- Open apps with: gtk-launch <id> (ids from the reference). Websites/files with: xdg-open <target>.
+- Never use sudo, rm, package installs, or anything destructive. Never chain with ; && | or redirect.
+- If the request is a question you can answer from the status line, answer in "say" with no commands.
+- For other questions about the system, first ask for read-only probes, replying ONLY with
+  {"probe": ["<command>", ...]}  (e.g. "df -h", "sensors", "ps -eo pid,comm,%mem --sort=-%mem", "ip -brief addr",
+  "nmcli -t dev", "lsblk", "uname -r", "pacman -Q <pkg>", "hyprctl -j clients", "wpctl get-volume @DEFAULT_AUDIO_SINK@").
+  You will get their output and then give the final JSON reply, answering in "say" (up to 30 words then).
+- Never put informational commands (free, df, ps, ...) in "commands": their output would be lost. Use probes.
+- If you cannot do it safely, say so briefly with no commands.
+
+Status: {status}
+
+Reference:
+{context}"""
+
+
+def classify(cmd):
+    if UNSAFE_CHARS.search(cmd):
+        return False
+    try:
+        parts = shlex.split(cmd)
+    except ValueError:
+        return False
+    if not parts:
+        return False
+    prog = os.path.basename(os.path.expanduser(parts[0]))
+    if prog == "hyprctl":
+        return len(parts) > 1 and parts[1] == "dispatch"
+    return prog in SAFE_PROGRAMS or prog.startswith(SAFE_PREFIXES)
+
+
+# Read-only programs Claude may probe to answer questions. Nothing here changes the system.
+PROBE_PROGRAMS = {
+    "free", "df", "du", "uptime", "sensors", "lsblk", "lscpu", "lsusb", "nproc", "uname", "hostnamectl", "date",
+    "who", "ps", "top", "ip", "nmcli", "iwctl", "upower", "wpctl", "brightnessctl", "pacman", "systemctl",
+    "journalctl", "hyprctl", "cat", "findmnt", "timedatectl", "bluetoothctl", "fastfetch",
+}
+PROBE_SUBCOMMANDS = {   # programs that also have state-changing subcommands: allow only these
+    "pacman": lambda a: a[1:2] and a[1].startswith("-Q"),
+    "systemctl": lambda a: any(x in a for x in ("status", "list-units", "is-active", "is-enabled", "list-timers")),
+    "journalctl": lambda a: True,
+    "hyprctl": lambda a: len(a) > 1 and a[1] not in ("dispatch", "keyword", "eval", "reload", "kill", "setcursor"),
+    "wpctl": lambda a: len(a) > 1 and a[1] in ("status", "get-volume", "inspect"),
+    "brightnessctl": lambda a: len(a) == 1 or any(x in a for x in ("get", "-l", "info", "max")),
+    "cat": lambda a: all(x.startswith(("/proc/", "/sys/")) for x in a[1:]),
+    "iwctl": lambda a: "show" in a or "list" in a,
+    "bluetoothctl": lambda a: len(a) > 1 and a[1] in ("devices", "info", "show", "paired-devices"),
+    "nmcli": lambda a: not any(x in a for x in ("up", "down", "delete", "modify", "add", "connect", "disconnect", "on", "off")),
+    "top": lambda a: "-b" in a or "-bn1" in a,
+}
+
+
+def probe_allowed(cmd):
+    if UNSAFE_CHARS.search(cmd):
+        return False
+    try:
+        parts = shlex.split(cmd)
+    except ValueError:
+        return False
+    if not parts or parts[0] not in PROBE_PROGRAMS:
+        return False
+    check = PROBE_SUBCOMMANDS.get(parts[0])
+    return bool(check(parts)) if check else True
+
+
+def run_probe(cmd):
+    if not probe_allowed(cmd):
+        return "(not allowed: read-only commands only)"
+    try:
+        parts = shlex.split(cmd)
+        if parts[0] == "journalctl" and "-n" not in parts:
+            parts += ["-n", "40", "--no-pager"]
+        if parts[0] == "top" and "-n" not in " ".join(parts):
+            parts += ["-n", "1"]
+        r = subprocess.run(parts, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=6)
+        out = (r.stdout or r.stderr).strip()
+        return out[:3500] + ("\n…(truncated)" if len(out) > 3500 else "")
+    except Exception as e:
+        return f"(failed: {e})"
+
+
+def claude(system, prompt):
+    try:
+        out = subprocess.run(
+            ["claude", "-p", "--model", "haiku", "--tools", "", "--no-session-persistence",
+             "--system-prompt", system, prompt],
+            stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=60,
+            cwd=os.path.expanduser("~")).stdout
+    except subprocess.TimeoutExpired:
+        return {"say": "No response from the computer core.", "commands": []}
+    m = re.search(r"\{.*\}", out, re.S)
+    try:
+        data = json.loads(m.group(0)) if m else {}
+    except json.JSONDecodeError:
+        data = {}
+    return data or {"say": (out.strip()[:160] or "Unable to comply."), "commands": []}
+
+
+def ask(request, history=()):
+    system = SYSTEM.replace("{status}", status()).replace("{context}", build_context())
+    prompt = request
+    if history:
+        earlier = "\n".join(f"Q: {h.get('q', '')}\nA: {h.get('a', '')}" for h in history[-4:])
+        prompt = f"Earlier in this conversation:\n{earlier}\n\nNow: {request}"
+    for _ in range(2):          # at most two rounds of probes
+        data = claude(system, prompt)
+        probes = [str(p) for p in data.get("probe", []) if str(p).strip()][:4]
+        if not probes:
+            return data
+        results = "\n\n".join(f"$ {p}\n{run_probe(p)}" for p in probes)
+        prompt = f"{prompt}\n\nProbe results:\n{results}\n\nNow give the final JSON reply."
+    data = claude(system, prompt + "\nNo more probes; answer now.")
+    data.pop("probe", None)
+    return data
+
+
+def main():
+    args = sys.argv[1:]
+    history = []
+    if args[:1] == ["--history"] and len(args) > 1:
+        try:
+            history = json.loads(args[1])
+        except json.JSONDecodeError:
+            pass
+        args = args[2:]
+    request = " ".join(args).strip()
+    if not request:
+        print(json.dumps({"say": "Awaiting instructions.", "commands": [], "autorun": True}))
+        return
+    data = ask(request, history)
+    cmds = [{"cmd": str(c), "safe": classify(str(c))} for c in data.get("commands", []) if str(c).strip()]
+    print(json.dumps({"say": str(data.get("say", "")), "commands": cmds,
+                      "autorun": all(c["safe"] for c in cmds)}))
+
+
+if __name__ == "__main__":
+    main()

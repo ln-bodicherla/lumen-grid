@@ -1,0 +1,59 @@
+diff -ruN a/components/NotificationCard.qml b/components/NotificationCard.qml
+--- a/components/NotificationCard.qml	2026-10-16 15:35:11.116855785 -0700
++++ b/components/NotificationCard.qml	2026-10-16 15:35:11.117843932 -0700
+@@ -26,6 +26,8 @@
+   property int urgency: 1
+   property double timestamp: 0
+   property int cornerRadius: 0
++  // Lumen: run a border beam around the card (popups only, not history).
++  property bool sweep: false
+ 
+   // System monospace font injected by the container.
+   property string fontFamily: ""
+@@ -160,7 +162,7 @@
+         Layout.rightMargin: Style.space(10)
+         spacing: Style.space(2)
+ 
+-        Text {
++        Decrypt {   // Lumen: pop-up titles decrypt into place
+           // The spec defines the summary as a single line of plain text, so
+           // AutoText could only ever promote a hostile string to rich text.
+           // The body below is StyledText on purpose — see Service.qml's
+@@ -168,7 +170,8 @@
+           textFormat: Text.PlainText
+           Layout.fillWidth: true
+           visible: root.summary.length > 0
+-          text: root.summary
++          target: root.summary
++          duration: root.sweep ? 520 : 0
+           font.family: "Liberation Sans"
+           color: Color.notifications.text
+           font.pixelSize: Style.font.title
+@@ -195,6 +198,16 @@
+     }
+   }
+ 
++  // Lumen border beam: a light cycle rides the card's edge while it's on screen
++  // (popups only, not history). Purely visual; no mouse handling.
++  BorderBeam {
++    anchors.fill: parent
++    visible: root.sweep
++    radius: root.cornerRadius
++    color: Color.notifications.border
++    length: Math.min(140, (root.width + root.height) * 0.35)
++  }
++
+   // Hover-revealed close. Stacked after mainColumn so its MouseArea sits
+   // above the full-card one and the click never reaches cardClicked.
+   Item {
+diff -ruN a/Service.qml b/Service.qml
+--- a/Service.qml	2026-10-16 15:35:11.116815201 -0700
++++ b/Service.qml	2026-10-16 15:35:11.117909434 -0700
+@@ -1051,6 +1051,7 @@
+               cornerRadius: service.cornerRadius
+               fontFamily: service.shell && service.shell.bar ? service.shell.bar.fontFamily : ""
+               glyph: cardSlot.glyph
++              sweep: true
+ 
+               onCloseRequested: service.dismissPopup(cardSlot.index)
+               onCardClicked: service.invokePopupDefault(cardSlot.index)

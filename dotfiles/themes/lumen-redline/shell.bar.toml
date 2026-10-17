@@ -1,0 +1,9 @@
+# Lumen: HUD bar. Near-black panel, amber readouts, cyan for anything calling for attention.
+[bar]
+background       = "#171717"  # matches the wallpaper's top edge so the bar blends in
+background-alpha = 1.0
+text             = "#F2372A"
+active           = "#85E6B6"
+scale-with-font  = true
+size-horizontal  = 26
+size-vertical    = 28

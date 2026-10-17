@@ -1,0 +1,271 @@
+/* Lumen Grid — YouTube skin.
+   Built on YouTube's own dark theme (html[dark], forced by content.js) and only active
+   while the Lumen theme is on (html.tf-yt.tf-lumen). The player's own controls are left alone. */
+
+html.tf-yt.tf-lumen {
+  --tf-c-dim: color-mix(in srgb, var(--tf-c) 22%, transparent);
+  --tf-c-faint: color-mix(in srgb, var(--tf-c) 7%, transparent);
+
+  --tf-glass: color-mix(in srgb, var(--tf-bg-dark) 72%, transparent);
+  --tf-glass-panel: color-mix(in srgb, var(--tf-panel) 78%, transparent);
+
+  /* page surfaces go transparent so the live backdrop shows through */
+  --yt-spec-base-background: transparent !important;
+  --yt-spec-raised-background: var(--tf-panel) !important;
+  --yt-spec-menu-background: var(--tf-panel) !important;
+  --yt-spec-general-background-a: transparent !important;
+  --yt-spec-general-background-b: var(--tf-glass) !important;
+  --yt-spec-general-background-c: var(--tf-panel) !important;
+  --yt-spec-additive-background: var(--tf-c-faint) !important;
+  --yt-spec-badge-chip-background: var(--tf-c-faint) !important;
+  --yt-spec-button-chip-background-hover: color-mix(in srgb, var(--tf-c) 16%, transparent) !important;
+  --yt-spec-10-percent-layer: color-mix(in srgb, var(--tf-c) 14%, transparent) !important;
+  --yt-spec-call-to-action: var(--tf-c) !important;
+  --yt-spec-themed-blue: var(--tf-c) !important;
+  --yt-spec-text-secondary: var(--tf-fg-muted) !important;
+  background: var(--tf-bg-dark) !important;
+}
+html.tf-yt.tf-lumen body, html.tf-yt.tf-lumen ytd-app, html.tf-yt.tf-lumen ytd-page-manager,
+html.tf-yt.tf-lumen ytd-browse, html.tf-yt.tf-lumen ytd-watch-flexy, html.tf-yt.tf-lumen ytd-search {
+  background: transparent !important;
+}
+
+/* the live backdrop itself (#tf-bg) is shared with every site: see content.css */
+
+/* ---- logo: YouTube red -> Lumen cyan ---- */
+html.tf-yt.tf-lumen ytd-topbar-logo-renderer #logo-icon,
+html.tf-yt.tf-lumen ytd-logo #logo-icon { filter: hue-rotate(180deg) saturate(1.4) drop-shadow(0 0 6px color-mix(in srgb, var(--tf-c) 50%, transparent)); }
+
+/* ---- top bar ---- */
+html.tf-yt.tf-lumen ytd-masthead { background: transparent !important; }
+/* Blur only on leaf layers. A backdrop-filter on a box makes it the anchor for position:fixed
+   children, so on the home page's chip bar (pinned inside its header) it knocked the chips
+   behind the video cards. Containers of pinned bars get a plain tint instead. */
+html.tf-yt.tf-lumen #masthead-container #background, html.tf-yt.tf-lumen #frosted-glass {
+  background: var(--tf-glass) !important; backdrop-filter: blur(16px) saturate(1.2) !important;
+}
+html.tf-yt.tf-lumen ytd-feed-filter-chip-bar-renderer #chips-wrapper {
+  background: color-mix(in srgb, var(--tf-bg-dark) 86%, transparent) !important;
+}
+html.tf-yt.tf-lumen #masthead-container #background { border-bottom: 1px solid var(--tf-c-dim); }
+html.tf-yt.tf-lumen .ytSearchboxComponentInputBox,
+html.tf-yt.tf-lumen ytd-searchbox #container.ytd-searchbox {
+  background: var(--tf-glass) !important; border: 1px solid var(--tf-c-dim) !important; border-right: 0 !important;
+}
+html.tf-yt.tf-lumen .ytSearchboxComponentInputBoxHasFocus,
+html.tf-yt.tf-lumen ytd-searchbox[has-focus] #container.ytd-searchbox {
+  border-color: var(--tf-c) !important; box-shadow: 0 0 14px color-mix(in srgb, var(--tf-c) 35%, transparent) !important;
+}
+html.tf-yt.tf-lumen .ytSearchboxComponentSearchButton,
+html.tf-yt.tf-lumen #search-icon-legacy {
+  background: var(--tf-c-faint) !important; border: 1px solid var(--tf-c-dim) !important;
+}
+html.tf-yt.tf-lumen .ytSearchboxComponentSearchButton:hover,
+html.tf-yt.tf-lumen #search-icon-legacy:hover { background: color-mix(in srgb, var(--tf-c) 18%, transparent) !important; }
+html.tf-yt.tf-lumen .ytSearchboxComponentInput { color: var(--tf-fg) !important; caret-color: var(--tf-c); }
+
+/* ---- buttons ---- */
+html.tf-yt.tf-lumen .yt-spec-button-shape-next {
+  transition: background .15s, box-shadow .15s, color .15s, border-color .15s !important;
+}
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--tonal {
+  background: var(--tf-c-faint) !important; border: 1px solid var(--tf-c-dim) !important;
+}
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--tonal:hover,
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--outline:hover {
+  background: color-mix(in srgb, var(--tf-c) 14%, transparent) !important; border-color: var(--tf-c) !important; color: var(--tf-c) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tf-c) 35%, transparent) !important;
+}
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--outline { border-color: var(--tf-c-dim) !important; }
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--text:hover { background: var(--tf-c-faint) !important; color: var(--tf-c) !important; }
+/* like / dislike pair: one glowing capsule with a cyan divider */
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--segmented-start::after { background: var(--tf-c-dim) !important; }
+html.tf-yt.tf-lumen like-button-view-model button[aria-pressed="true"] { color: var(--tf-c) !important; text-shadow: 0 0 8px var(--tf-c); }
+/* primary filled buttons (Subscribe, Join, ...): neon outline, fills on hover */
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--filled {
+  background: transparent !important; color: var(--tf-c) !important; border: 1px solid var(--tf-c) !important;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tf-c) 30%, transparent), inset 0 0 10px color-mix(in srgb, var(--tf-c) 12%, transparent) !important;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--filled:hover {
+  background: var(--tf-c) !important; color: #001014 !important; box-shadow: 0 0 20px var(--tf-c) !important;
+}
+/* already subscribed: quiet */
+html.tf-yt.tf-lumen ytd-subscribe-button-renderer[subscribed] .yt-spec-button-shape-next,
+html.tf-yt.tf-lumen yt-subscribe-button-view-model .yt-spec-button-shape-next--tonal { text-transform: none; letter-spacing: 0; }
+
+/* ---- chips (filters at the top of home / under the player) ---- */
+html.tf-yt.tf-lumen .ytChipShapeChip, html.tf-yt.tf-lumen yt-chip-cloud-chip-renderer #chip-container { background: var(--tf-c-faint) !important; border: 1px solid var(--tf-c-dim) !important;
+  transition: background .15s, box-shadow .15s !important;
+}
+html.tf-yt.tf-lumen .ytChipShapeChip:hover, html.tf-yt.tf-lumen yt-chip-cloud-chip-renderer:hover #chip-container {
+  border-color: var(--tf-c) !important; box-shadow: 0 0 10px color-mix(in srgb, var(--tf-c) 30%, transparent) !important;
+}
+html.tf-yt.tf-lumen .ytChipShapeActive, html.tf-yt.tf-lumen yt-chip-cloud-chip-renderer[selected] #chip-container {
+  background: var(--tf-c) !important; color: #001014 !important; border-color: var(--tf-c) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tf-c) 50%, transparent) !important;
+}
+
+/* ---- video cards (home grid, sidebar, search) ---- */
+html.tf-yt.tf-lumen ytd-compact-video-renderer,
+html.tf-yt.tf-lumen ytd-video-renderer, html.tf-yt.tf-lumen ytd-rich-grid-media { border-radius: 12px; transition: background .2s, box-shadow .2s;
+}
+html.tf-yt.tf-lumen ytd-compact-video-renderer:hover,
+html.tf-yt.tf-lumen ytd-video-renderer:hover, html.tf-yt.tf-lumen ytd-rich-grid-media:hover {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tf-c) 7%, transparent), transparent 60%);
+  box-shadow: 0 0 0 1px var(--tf-c-dim), 0 0 22px color-mix(in srgb, var(--tf-c) 12%, transparent);
+}
+html.tf-yt.tf-lumen yt-thumbnail-view-model, html.tf-yt.tf-lumen ytd-thumbnail #thumbnail { transition: box-shadow .2s !important;
+}
+html.tf-yt.tf-lumen yt-lockup-view-model:hover yt-thumbnail-view-model,
+html.tf-yt.tf-lumen ytd-thumbnail:hover #thumbnail {
+  box-shadow: 0 0 0 1px var(--tf-c), 0 0 20px color-mix(in srgb, var(--tf-c) 45%, transparent) !important;
+}
+/* titles light up with their card */
+html.tf-yt.tf-lumen yt-lockup-view-model:hover .yt-lockup-metadata-view-model__title,
+html.tf-yt.tf-lumen yt-lockup-view-model:hover .yt-lockup-metadata-view-model-wiz__title,
+html.tf-yt.tf-lumen ytd-compact-video-renderer:hover #video-title,
+html.tf-yt.tf-lumen ytd-video-renderer:hover #video-title,
+html.tf-yt.tf-lumen ytd-rich-grid-media:hover #video-title {
+  color: var(--tf-c) !important; text-shadow: 0 0 10px color-mix(in srgb, var(--tf-c) 40%, transparent);
+}
+/* duration / "New" badges: HUD readouts */
+html.tf-yt.tf-lumen .yt-badge-shape--thumbnail-default, html.tf-yt.tf-lumen .badge-shape-wiz--thumbnail-default,
+html.tf-yt.tf-lumen ytd-thumbnail-overlay-time-status-renderer .badge-shape-wiz,
+html.tf-yt.tf-lumen ytd-thumbnail-overlay-time-status-renderer #time-status {
+  background: var(--tf-glass) !important; color: var(--tf-c) !important;
+  border: 1px solid color-mix(in srgb, var(--tf-c) 45%, transparent);
+  font-family: ui-monospace, "JetBrains Mono", monospace !important; letter-spacing: .05em;
+}
+/* watched-progress bar under thumbnails */
+html.tf-yt.tf-lumen #progress.ytd-thumbnail-overlay-resume-playback-renderer,
+html.tf-yt.tf-lumen .ytThumbnailOverlayProgressBarHostWatchedProgressBarSegment {
+  background: var(--tf-c) !important; box-shadow: 0 0 8px var(--tf-c);
+}
+
+/* ---- watch page panels ---- */
+html.tf-yt.tf-lumen ytd-watch-metadata h1 { letter-spacing: .01em; text-shadow: 0 0 18px color-mix(in srgb, var(--tf-c) 18%, transparent); }
+html.tf-yt.tf-lumen ytd-watch-metadata #description.ytd-watch-metadata,
+html.tf-yt.tf-lumen #description.ytd-watch-metadata {
+  background: var(--tf-glass-panel) !important; backdrop-filter: blur(12px); border: 1px solid var(--tf-c-dim);
+  border-left: 2px solid var(--tf-c);
+}
+html.tf-yt.tf-lumen ytd-watch-metadata #description.ytd-watch-metadata:hover { box-shadow: 0 0 16px color-mix(in srgb, var(--tf-c) 12%, transparent); }
+html.tf-yt.tf-lumen ytd-comment-thread-renderer { border-left: 1px solid color-mix(in srgb, var(--tf-c) 12%, transparent); padding-left: 12px; margin-left: -13px; transition: border-color .2s; }
+html.tf-yt.tf-lumen ytd-comment-thread-renderer:hover { border-left-color: var(--tf-c); }
+html.tf-yt.tf-lumen ytd-comments-header-renderer #count,
+html.tf-yt.tf-lumen ytd-rich-shelf-renderer #title, html.tf-yt.tf-lumen ytd-shelf-renderer #title,
+html.tf-yt.tf-lumen yt-section-header-view-model h2 {
+  text-transform: uppercase; letter-spacing: .12em; color: var(--tf-fg) !important;
+}
+html.tf-yt.tf-lumen yt-avatar-shape img, html.tf-yt.tf-lumen #avatar img { transition: box-shadow .2s; }
+html.tf-yt.tf-lumen yt-avatar-shape:hover img, html.tf-yt.tf-lumen #avatar:hover img { box-shadow: 0 0 0 1px var(--tf-c), 0 0 12px var(--tf-c); }
+
+/* ---- left sidebar ---- */
+html.tf-yt.tf-lumen tp-yt-app-drawer #contentContainer, html.tf-yt.tf-lumen #guide-content { background: var(--tf-glass) !important; backdrop-filter: blur(16px); }
+html.tf-yt.tf-lumen ytd-mini-guide-renderer { background: var(--tf-glass) !important; backdrop-filter: blur(16px); border-right: 1px solid color-mix(in srgb, var(--tf-c) 10%, transparent); }
+html.tf-yt.tf-lumen ytd-guide-entry-renderer[active] tp-yt-paper-item {
+  background: color-mix(in srgb, var(--tf-c) 12%, transparent) !important; box-shadow: inset 2px 0 0 var(--tf-c);
+}
+html.tf-yt.tf-lumen ytd-guide-entry-renderer[active] .title,
+html.tf-yt.tf-lumen ytd-guide-entry-renderer[active] yt-icon { color: var(--tf-c) !important; }
+html.tf-yt.tf-lumen ytd-guide-section-renderer { border-bottom-color: color-mix(in srgb, var(--tf-c) 12%, transparent) !important; }
+
+/* ---- menus, popups, tooltips ---- */
+html.tf-yt.tf-lumen ytd-menu-popup-renderer, html.tf-yt.tf-lumen ytd-multi-page-menu-renderer,
+html.tf-yt.tf-lumen yt-sheet-view-model, html.tf-yt.tf-lumen tp-yt-paper-dialog, html.tf-yt.tf-lumen yt-contextual-sheet-layout {
+  background: var(--tf-glass-panel) !important; backdrop-filter: blur(18px) !important; border: 1px solid var(--tf-c-dim) !important;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--tf-c) 18%, transparent), 0 12px 40px rgba(0,0,0,.6) !important;
+}
+html.tf-yt.tf-lumen ytd-menu-service-item-renderer:hover, html.tf-yt.tf-lumen ytd-compact-link-renderer:hover,
+html.tf-yt.tf-lumen yt-list-item-view-model:hover {
+  background: color-mix(in srgb, var(--tf-c) 10%, transparent) !important; box-shadow: inset 2px 0 0 var(--tf-c);
+}
+html.tf-yt.tf-lumen tp-yt-paper-tooltip #tooltip, html.tf-yt.tf-lumen .ytp-tooltip-text {
+  background: var(--tf-glass) !important; color: var(--tf-c) !important; border: 1px solid var(--tf-c-dim);
+  font-family: ui-monospace, "JetBrains Mono", monospace !important;
+}
+html.tf-yt.tf-lumen hr, html.tf-yt.tf-lumen #divider, html.tf-yt.tf-lumen ytd-item-section-renderer #header { border-color: color-mix(in srgb, var(--tf-c) 12%, transparent) !important; }
+
+/* ---- player: only the progress bar gets the neon, controls stay stock ---- */
+html.tf-yt.tf-lumen .ytp-play-progress, html.tf-yt.tf-lumen .ytp-swatch-background-color,
+html.tf-yt.tf-lumen .ytp-scrubber-button, html.tf-yt.tf-lumen .ytProgressBarLineProgressBarPlayed {
+  background: var(--tf-c) !important; box-shadow: 0 0 8px var(--tf-c);
+}
+
+/* ---- current YouTube class names (camelCase builds); same look as the rules above ---- */
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextHost { transition: background .15s, box-shadow .15s, color .15s, border-color .15s !important;
+}
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextTonal { background: var(--tf-c-faint) !important; border: 1px solid var(--tf-c-dim) !important; }
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextOutline { border-color: var(--tf-c-dim) !important; }
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextTonal:hover, html.tf-yt.tf-lumen .ytSpecButtonShapeNextOutline:hover {
+  background: color-mix(in srgb, var(--tf-c) 14%, transparent) !important; border-color: var(--tf-c) !important; color: var(--tf-c) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--tf-c) 35%, transparent) !important;
+}
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextText:hover { background: var(--tf-c-faint) !important; color: var(--tf-c) !important; }
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextCallToAction.ytSpecButtonShapeNextOutline,
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextCallToAction.ytSpecButtonShapeNextText,
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--call-to-action.yt-spec-button-shape-next--outline {
+  color: var(--tf-c) !important; border-color: color-mix(in srgb, var(--tf-c) 50%, transparent) !important;
+}
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextFilled {
+  background: transparent !important; color: var(--tf-c) !important; border: 1px solid var(--tf-c) !important;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tf-c) 30%, transparent), inset 0 0 10px color-mix(in srgb, var(--tf-c) 12%, transparent) !important;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextFilled:hover { background: var(--tf-c) !important; color: #001014 !important; box-shadow: 0 0 20px var(--tf-c) !important; }
+html.tf-yt.tf-lumen .ytSpecButtonShapeNextSegmentedStart::after { background: var(--tf-c-dim) !important; }
+
+/* card hover: recolor YouTube's own hover layer, so the glow has exactly YouTube's card shape */
+html.tf-yt.tf-lumen .ytSpecTouchFeedbackShapeHoverEffect {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tf-c) 9%, transparent), color-mix(in srgb, var(--tf-c) 2%, transparent) 60%) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tf-c) 30%, transparent), 0 0 22px color-mix(in srgb, var(--tf-c) 14%, transparent) !important;
+}
+html.tf-yt.tf-lumen .ytSpecTouchFeedbackShapeStroke { border-color: color-mix(in srgb, var(--tf-c) 30%, transparent) !important; }
+html.tf-yt.tf-lumen .ytSpecTouchFeedbackShapeFill { background: color-mix(in srgb, var(--tf-c) 12%, transparent) !important; }
+/* thumbnail glow sits on the thumbnail itself (it owns the rounding), not the wider square link around it */
+html.tf-yt.tf-lumen .ytThumbnailViewModelHost,
+html.tf-yt.tf-lumen .shortsLockupViewModelHostThumbnailParentContainer { transition: box-shadow .2s !important; }
+html.tf-yt.tf-lumen .ytLockupViewModelHost:hover .ytThumbnailViewModelHost,
+html.tf-yt.tf-lumen .shortsLockupViewModelHost:hover .shortsLockupViewModelHostThumbnailParentContainer {
+  box-shadow: 0 0 0 1px var(--tf-c), 0 0 20px color-mix(in srgb, var(--tf-c) 45%, transparent) !important;
+}
+html.tf-yt.tf-lumen .ytLockupViewModelHost:hover .ytLockupMetadataViewModelTitle,
+html.tf-yt.tf-lumen .shortsLockupViewModelHost:hover .shortsLockupViewModelHostMetadataTitle,
+html.tf-yt.tf-lumen .shortsLockupViewModelHost:hover .shortsLockupViewModelHostOutsideMetadataTitle {
+  color: var(--tf-c) !important; text-shadow: 0 0 10px color-mix(in srgb, var(--tf-c) 40%, transparent);
+}
+html.tf-yt.tf-lumen .ytBadgeShapeThumbnailDefault {
+  background: var(--tf-glass) !important; color: var(--tf-c) !important;
+  border: 1px solid color-mix(in srgb, var(--tf-c) 45%, transparent);
+  font-family: ui-monospace, "JetBrains Mono", monospace !important; letter-spacing: .05em;
+}
+html.tf-yt.tf-lumen .ytwThumbnailOverlayResumePlaybackRendererThumbnailOverlayResumePlaybackProgress {
+  background: var(--tf-c) !important; box-shadow: 0 0 8px var(--tf-c);
+}
+
+/* ---- orange: Omarchy's second accent, for actions and "you did this" states ---- */
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--filled, html.tf-yt.tf-lumen .ytSpecButtonShapeNextFilled {
+  color: var(--tf-o) !important; border-color: var(--tf-o) !important;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tf-o) 35%, transparent), inset 0 0 10px color-mix(in srgb, var(--tf-o) 12%, transparent) !important;
+}
+html.tf-yt.tf-lumen .yt-spec-button-shape-next--filled:hover, html.tf-yt.tf-lumen .ytSpecButtonShapeNextFilled:hover {
+  background: var(--tf-o) !important; color: #140a00 !important; box-shadow: 0 0 20px var(--tf-o) !important;
+}
+html.tf-yt.tf-lumen like-button-view-model button[aria-pressed="true"] { color: var(--tf-o) !important; text-shadow: 0 0 8px var(--tf-o); }
+html.tf-yt.tf-lumen ytd-comment-thread-renderer:hover { border-left-color: var(--tf-o); }
+html.tf-yt.tf-lumen .ytp-scrubber-button { background: var(--tf-o) !important; box-shadow: 0 0 10px var(--tf-o) !important; }
+html.tf-yt.tf-lumen .ytSearchboxComponentInput { caret-color: var(--tf-o); }
+
+/* Border beam around the search box while it has focus (keyframes and --tf-beam live in content.css) */
+html.tf-yt.tf-lumen .ytSearchboxComponentInputBoxHasFocus,
+html.tf-yt.tf-lumen ytd-searchbox[has-focus] #container.ytd-searchbox { position: relative !important; }
+html.tf-yt.tf-lumen .ytSearchboxComponentInputBoxHasFocus::after,
+html.tf-yt.tf-lumen ytd-searchbox[has-focus] #container.ytd-searchbox::after {
+  content: ''; position: absolute; inset: -1px; pointer-events: none; border-radius: inherit; padding: 2px;
+  background: conic-gradient(from var(--tf-beam), transparent 0 55%,
+              color-mix(in srgb, var(--tf-c) 45%, transparent) 82%, var(--tf-c) 95%, #fff 98%, transparent 98.5%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: tf-beam-spin 2.4s linear infinite;
+}

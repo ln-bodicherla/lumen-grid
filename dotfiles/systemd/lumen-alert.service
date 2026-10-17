@@ -1,0 +1,12 @@
+[Unit]
+Description=Grid alert: Redline red when the battery is low, the Mac runs hot, or an update broke off
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=%h/.local/bin/lumen-alert
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

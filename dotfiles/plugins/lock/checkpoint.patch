@@ -1,0 +1,280 @@
+diff -ruN a/LockView.qml b/LockView.qml
+--- a/LockView.qml	2026-10-16 16:42:09.193439886 -0700
++++ b/LockView.qml	2026-10-16 16:42:09.196752329 -0700
+@@ -1,5 +1,6 @@
+ import QtQuick
+ import QtQuick.Effects
++import QtQuick.Shapes
+ import qs.Commons
+ import qs.Ui
+ 
+@@ -16,6 +17,12 @@
+   property bool loadBackground: true
+   property string passwordText: ""
+   property bool syncingPasswordText: false
++  // Lumen security checkpoint
++  property bool granted: false
++  property string userName: ""
++  readonly property color hudColor: Color.lock.border
++  readonly property color dangerColor: Color.lock.borderError
++  onFailedAttemptsChanged: if (failedAttempts > 0) deniedAnim.restart()
+ 
+   readonly property string placeholderText: "Enter Password"
+   readonly property int fieldWidth: 381
+@@ -112,6 +119,155 @@
+       contrast: -0.08
+     }
+ 
++    // Lumen: the live 3D Grid world as the lock background (same as the desktop
++    // wallpaper), dimmed a little so the checkpoint stays readable.
++    ShaderEffect {
++      id: gridWorld
++      anchors.fill: parent
++      visible: root.loadBackground
++      property real time: 0
++      property real load: 0
++      property real agent: 0
++      property real horizon: 0.66
++      property size size: Qt.size(width, height)
++      property color color: Color.accent
++      property color alert: Color.urgent
++      fragmentShader: Qt.resolvedUrl("shaders/world.frag.qsb")
++      blending: false
++      Timer {
++        interval: 33; repeat: true; running: gridWorld.visible
++        onTriggered: gridWorld.time += 0.033
++      }
++    }
++    Rectangle { anchors.fill: parent; color: "black"; opacity: 0.25; visible: gridWorld.visible }
++
++    // ---- Lumen security checkpoint HUD (visual only; input is untouched) ----
++    Item {
++      id: hud
++      anchors.fill: parent
++      enabled: false
++      property real denied: 0          // 1 at the start of an ACCESS DENIED flash
++      property real jitter: 0
++      property real grant: 0           // 0..1 through the ACCESS GRANTED burst
++      readonly property color tone: denied > 0.05 ? root.dangerColor : root.hudColor
++
++      // scan beam: a slow sweep top to bottom, forever
++      Rectangle {
++        id: beam
++        width: parent.width; height: 2
++        color: hud.tone; opacity: 0.35
++        Rectangle { anchors.centerIn: parent; width: parent.width; height: 46; color: hud.tone; opacity: 0.07 }
++        NumberAnimation on y { from: -40; to: hud.height + 40; duration: 4500; loops: Animation.Infinite; running: true }
++      }
++
++      // identity rings around the field
++      Item {
++        anchors.centerIn: parent
++        width: 1; height: 1
++        scale: 1 + 1.4 * hud.grant
++        opacity: 1 - hud.grant
++        Shape {
++          x: -230; y: -230; width: 460; height: 460
++          RotationAnimation on rotation { from: 0; to: 360; duration: 24000; loops: Animation.Infinite; running: true }
++          ShapePath {
++            fillColor: "transparent"; strokeColor: hud.tone; strokeWidth: 1.5
++            strokeStyle: ShapePath.DashLine; dashPattern: [10, 8]
++            PathAngleArc { centerX: 230; centerY: 230; radiusX: 228; radiusY: 228; sweepAngle: 360 }
++          }
++          opacity: 0.55
++        }
++        Rectangle {
++          x: -198; y: -198; width: 396; height: 396; radius: 198
++          color: "transparent"; border.width: 1; border.color: hud.tone; opacity: 0.25
++        }
++        Shape {
++          x: -265; y: -265; width: 530; height: 530
++          RotationAnimation on rotation { from: 360; to: 0; duration: 14000; loops: Animation.Infinite; running: true }
++          ShapePath {
++            fillColor: "transparent"; strokeColor: hud.tone; strokeWidth: 3; capStyle: ShapePath.FlatCap
++            PathAngleArc { centerX: 265; centerY: 265; radiusX: 262; radiusY: 262; startAngle: 0; sweepAngle: 46 }
++          }
++          ShapePath {
++            fillColor: "transparent"; strokeColor: hud.tone; strokeWidth: 3; capStyle: ShapePath.FlatCap
++            PathAngleArc { centerX: 265; centerY: 265; radiusX: 262; radiusY: 262; startAngle: 120; sweepAngle: 46 }
++          }
++          ShapePath {
++            fillColor: "transparent"; strokeColor: hud.tone; strokeWidth: 3; capStyle: ShapePath.FlatCap
++            PathAngleArc { centerX: 265; centerY: 265; radiusX: 262; radiusY: 262; startAngle: 240; sweepAngle: 46 }
++          }
++          opacity: 0.8
++        }
++      }
++
++      // status line above the field
++      Decrypt {
++        anchors.horizontalCenter: parent.horizontalCenter
++        anchors.horizontalCenterOffset: hud.jitter
++        y: parent.height / 2 - (root.granted ? 150 : 110)
++        target: root.granted ? "ACCESS GRANTED" : (hud.denied > 0.05 ? "ACCESS DENIED" : "IDENTITY VERIFICATION REQUIRED")
++        duration: root.granted ? 380 : 700
++        color: hud.tone
++        font.family: Style.font.family
++        font.pixelSize: (root.granted || hud.denied > 0.05) ? 30 : 13
++        font.bold: root.granted || hud.denied > 0.05
++        font.letterSpacing: (root.granted || hud.denied > 0.05) ? 8 : 4
++        style: Text.Outline
++        styleColor: Qt.rgba(hud.tone.r, hud.tone.g, hud.tone.b, 0.35)
++      }
++
++      // identity line below the field
++      Column {
++        anchors.horizontalCenter: parent.horizontalCenter
++        y: parent.height / 2 + 66
++        spacing: 6
++        opacity: 1 - hud.grant
++        Decrypt {
++          anchors.horizontalCenter: parent.horizontalCenter
++          target: root.userName ? "USER  ·  " + root.userName.toUpperCase() : ""
++          duration: 900
++          color: hud.tone
++          font.family: Style.font.family
++          font.pixelSize: 12
++          font.letterSpacing: 3
++        }
++        Text {
++          anchors.horizontalCenter: parent.horizontalCenter
++          text: "GRID SECURITY  ·  CLEARANCE LEVEL 7"
++          color: hud.tone; opacity: 0.55
++          font.family: Style.font.family
++          font.pixelSize: 10
++          font.letterSpacing: 3
++        }
++      }
++
++      // full-screen flash: red on denied, accent on granted
++      Rectangle {
++        anchors.fill: parent
++        color: hud.tone
++        opacity: Math.max(0.16 * hud.denied, 0.22 * Math.sin(Math.PI * Math.min(1, hud.grant * 1.6)))
++      }
++
++      SequentialAnimation {
++        id: deniedAnim
++        PropertyAction { target: hud; property: "denied"; value: 1 }
++        NumberAnimation { target: hud; property: "jitter"; to: 9; duration: 40 }
++        NumberAnimation { target: hud; property: "jitter"; to: -7; duration: 40 }
++        NumberAnimation { target: hud; property: "jitter"; to: 5; duration: 40 }
++        NumberAnimation { target: hud; property: "jitter"; to: -3; duration: 40 }
++        NumberAnimation { target: hud; property: "jitter"; to: 0; duration: 40 }
++        PauseAnimation { duration: 900 }
++        NumberAnimation { target: hud; property: "denied"; to: 0; duration: 500 }
++      }
++      NumberAnimation {
++        target: hud; property: "grant"; from: 0; to: 1; duration: 720; easing.type: Easing.OutCubic
++        running: root.granted
++      }
++      Connections {
++        target: root
++        function onGrantedChanged() { if (!root.granted) hud.grant = 0 }
++      }
++    }
++
+     MouseArea {
+       anchors.fill: parent
+       hoverEnabled: true
+@@ -128,6 +284,8 @@
+       borderSpec: root.inputBorderSpec
+       radius: Style.cornerRadius
+       clip: true
++      opacity: root.granted ? 0 : 1
++      Behavior on opacity { NumberAnimation { duration: 260 } }
+ 
+       TextInput {
+         id: passwordInput
+diff -ruN a/Service.qml b/Service.qml
+--- a/Service.qml	2026-10-16 16:42:09.193462803 -0700
++++ b/Service.qml	2026-10-16 16:42:09.196720162 -0700
+@@ -23,6 +23,11 @@
+   property bool passwordPamConfigured: false
+   property bool fingerprintConfigured: false
+   property bool previewVisible: false
++  // Lumen security checkpoint: after a correct password the screen holds for a
++  // moment on ACCESS GRANTED, then unlocks and plays the "systems online" wake.
++  property bool accessGranted: false
++  property bool previewGranted: false
++  property int previewDenied: 0
+   property string enteredPassword: ""
+   property string pendingPassword: ""
+   property string failureMessage: ""
+@@ -145,6 +150,22 @@
+     return true
+   }
+ 
++  function grantAccess() {
++    if (accessGranted) return
++    accessGranted = true
++    grantTimer.restart()
++  }
++
++  Timer {
++    id: grantTimer
++    interval: 750
++    onTriggered: {
++      root.accessGranted = false
++      root.finishUnlock()
++      Quickshell.execDetached(["omarchy-shell", "-q", "lumenFx", "wake"])
++    }
++  }
++
+   function finishUnlock() {
+     if (!root.locked && !lockRequested) return
+ 
+@@ -221,7 +242,7 @@
+ 
+     if (!lockRequested) return
+     if (result === PamResult.Success) {
+-      finishUnlock()
++      grantAccess()
+     } else if (fingerprintConfigured) {
+       fingerprintRetryTimer.restart()
+     }
+@@ -274,7 +295,9 @@
+         authenticatingPassword: root.authenticatingPassword
+         failureMessage: root.failureMessage
+         failedAttempts: root.failedAttempts
+-        inputEnabled: root.lockRequested
++        inputEnabled: root.lockRequested && !root.accessGranted
++        granted: root.accessGranted
++        userName: root.userName
+         loadBackground: root.locked
+         passwordText: root.enteredPassword
+         onPasswordTextEdited: function(password) { root.enteredPassword = password }
+@@ -303,8 +326,10 @@
+       fingerprintConfigured: root.fingerprintConfigured
+       authenticatingPassword: false
+       failureMessage: ""
+-      failedAttempts: 0
++      failedAttempts: root.previewDenied
+       inputEnabled: false
++      granted: root.previewGranted
++      userName: root.userName
+       loadBackground: root.previewVisible
+       passwordText: ""
+     }
+@@ -329,7 +354,7 @@
+       root.pendingPassword = ""
+ 
+       if (!root.lockRequested) return
+-      if (result === PamResult.Success) root.finishUnlock()
++      if (result === PamResult.Success) root.grantAccess()
+       else root.handlePasswordFailure()
+     }
+ 
+@@ -545,7 +570,12 @@
+ 
+     function hidePreview(): string {
+       root.previewVisible = false
++      root.previewGranted = false
+       return "ok"
+     }
++
++    // Preview the checkpoint animations without locking.
++    function previewDeny(): string { root.previewDenied += 1; return "ok" }
++    function previewGrant(): string { root.previewGranted = true; return "ok" }
+   }
+ }

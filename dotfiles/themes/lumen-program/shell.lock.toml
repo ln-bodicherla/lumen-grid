@@ -1,0 +1,13 @@
+# Lumen: lock field is a cyan light line that ignites orange while you type.
+[lock]
+background       = "#0d0d0d"
+background-alpha = 0.8
+text             = "#d6f4fa"
+placeholder      = "#5f7a80"
+text-error       = "#e06c75"
+border           = "#8ED7E6"
+border-active    = "#d19a66"
+border-error     = "#e06c75"
+border-alpha     = 1.0
+selection        = "#8ED7E6"
+selection-alpha  = 0.45

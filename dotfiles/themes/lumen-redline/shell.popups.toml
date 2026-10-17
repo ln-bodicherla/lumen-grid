@@ -1,0 +1,8 @@
+# Lumen: bar flyouts, OSD, popup cards: dark glass framed by a single amber light line.
+[popups]
+background       = "#0d0d0d"
+background-alpha = 0.96
+text             = "#fbc2be"
+border           = "#F2372A"
+border-alpha     = 0.9
+border-width     = 1
