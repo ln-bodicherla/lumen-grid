@@ -79,7 +79,7 @@ through `omarchy pkg add`.
 ## Install
 
 ```bash
-git clone https://github.com/<you>/lumen-grid.git
+git clone https://github.com/ln-bodicherla/lumen-grid.git
 cd lumen-grid
 ./install.sh            # asks before the optional parts; --yes accepts them all, --no-apply skips applying
 ```
